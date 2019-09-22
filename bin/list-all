@@ -1,0 +1,8 @@
+#! /bin/bash
+# Copyright (c) 2019 Sebastien Braun
+# 
+# This software is released under the MIT License.
+# https://opensource.org/licenses/MIT
+
+
+curl -sSf https://ziglang.org/download/index.json | jq -r '. | keys | join(" ")'

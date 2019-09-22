@@ -1,0 +1,50 @@
+#! /bin/sh -e
+# Copyright (c) 2019 Sebastien Braun
+# 
+# This software is released under the MIT License.
+# https://opensource.org/licenses/MIT
+
+
+TMP_INST_DIR="$(mktemp -d)"
+
+if [ "$ASDF_INSTALL_TYPE" = "version" ]; then
+    f=".[\"$ASDF_INSTALL_VERSION\"]"
+    case "$(uname -m -s)" in
+        Linux*x86_64)
+            f="$f[\"x86_64-linux\"][\"tarball\"]"
+            ;;
+        *)
+            echo "Only Linux supported at the moment"
+            exit 1
+            ;;
+    esac
+    
+    bin_tarball="$(curl -sSf https://ziglang.org/download/index.json | jq -r "$f")"
+    if [ -z "$bin_tarball" ]; then
+        echo "No such version on your OS"
+        exit 1
+    fi
+
+    downloaded="$TMP_INST_DIR/zig.tarball"
+    curl -sSf -o "$downloaded" "$bin_tarball" || exit 1
+
+    unpack_dir="$TMP_INST_DIR/install_dir"
+    mkdir "$unpack_dir"
+
+    case "$bin_tarball" in
+        *.tar.xz)
+            tar -C "$unpack_dir" --strip-components=1 -xJvf "$downloaded"
+            ;;
+        *)
+            echo "Unsupported archive format"
+            exit 1
+            ;;
+    esac
+
+    mkdir "$unpack_dir"/bin
+    ln -s "../zig" "$unpack_dir/bin/zig"
+
+    mkdir -p "$ASDF_INSTALL_PATH"
+    mv "$unpack_dir"/* "$ASDF_INSTALL_PATH"/
+fi
+
